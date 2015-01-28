@@ -90,6 +90,7 @@
   <ItemGroup>
     <Compile Include="DebugStoreLogger.cs" />
     <Compile Include="Document.cs" />
+    <Compile Include="IDocument.cs" />
     <Compile Include="IStoreLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Store.cs" />

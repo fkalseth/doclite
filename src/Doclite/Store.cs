@@ -23,7 +23,7 @@ namespace Doclite
             _connection = connection;
         }
 
-        public void Save(IDocument document)
+        public void Save(Document document)
         {
             var table = TableFor(document.GetType());
             Log.Info("Saving {0} into {1}", document.Key, table);
@@ -102,7 +102,7 @@ namespace Doclite
         }
 
         public T Get<T>(string key)
-            where T : IDocument
+            where T : Document
         {
             Log.Info(String.Format("Getting {0} from {1}", key, TableFor(typeof(T))));
 
@@ -149,10 +149,10 @@ namespace Doclite
             }
         }
 
-        private DateTime Parse(long timestamp)
+        private DateTimeOffset Parse(long timestamp)
         {
-            var dt = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dt = dt.AddSeconds(timestamp).ToLocalTime();
+            var dt = new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero);
+            dt = dt.AddSeconds(timestamp);
             return dt;
         }
 

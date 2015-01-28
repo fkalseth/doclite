@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using NUnit.Framework;
 
@@ -41,6 +42,8 @@ namespace Doclite.Tests
                 store.Save(new Test { Key = "a", Foo = "bar 2" });
 
                 Test fetchedItem = store.Get<Test>("a");
+
+                Debug.WriteLine(fetchedItem.Timestamp);
 
                 Assert.That(fetchedItem.Foo, Is.EqualTo("bar 2"));
             }
@@ -94,7 +97,7 @@ namespace Doclite.Tests
         }
     }
 
-    public class Test : IDocument
+    public class Test : Document
     {
         public string Foo { get; set; }
     }

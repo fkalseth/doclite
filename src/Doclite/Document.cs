@@ -3,14 +3,12 @@ using Newtonsoft.Json;
 
 namespace Doclite
 {
-    public abstract class IDocument
+    public abstract class Document : IDocument
     {
         [JsonIgnore]
         public string Key { get; set; }
 
         [JsonIgnore]
-        public DateTime Timestamp { get; set; }
-
-        public string ETag { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
     }
 }
