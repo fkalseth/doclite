@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 namespace Doclite.Tests
@@ -29,7 +30,7 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                store.Save(new Test { Key = "a", Foo = "bar" });
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
             }
         }
 
@@ -38,10 +39,10 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                store.Save(new Test { Key = "a", Foo = "bar" });
-                store.Save(new Test { Key = "a", Foo = "bar 2" });
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
+                store.Save(new TestDocument { Key = "a", Foo = "bar 2" });
 
-                Test fetchedItem = store.Get<Test>("a");
+                TestDocument fetchedItem = store.Get<TestDocument>("a");
 
                 Debug.WriteLine(fetchedItem.Timestamp);
 
@@ -54,9 +55,9 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                store.Save(new Test { Key = "a", Foo = "bar" });
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
 
-                var fetched = store.Get<Test>("a");
+                var fetched = store.Get<TestDocument>("a");
 
                 Assert.IsNotNull(fetched, "Should have been added to store");
                 Assert.That(fetched.Foo, Is.EqualTo("bar"));
@@ -68,12 +69,12 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                store.Save(new Test { Key = "a", Foo = "bar" });
-                Assert.IsNotNull(store.Get<Test>("a"), "Should have been added to store");
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
+                Assert.IsNotNull(store.Get<TestDocument>("a"), "Should have been added to store");
                 
                 store.Delete("test", "a");
 
-                Assert.IsNull(store.Get<Test>("a"), "Should have been deleted from store");
+                Assert.IsNull(store.Get<TestDocument>("a"), "Should have been deleted from store");
             }
         }
 
@@ -82,8 +83,8 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                store.Save(new Test { Key = "a", Foo = "bar" });
-                Assert.IsNull(store.Get<Test>("no-such-key"));
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
+                Assert.IsNull(store.Get<TestDocument>("no-such-key"));
             }
         }
 
@@ -92,12 +93,26 @@ namespace Doclite.Tests
         {
             using (var store = Store.Open(DataFile))
             {
-                Assert.IsNull(store.Get<Test>("no-such-key"));
+                Assert.IsNull(store.Get<TestDocument>("no-such-key"));
+            }
+        }
+
+        [Test]
+        public void Can_retrieve_all_documents_of_type()
+        {
+            using (var store = Store.Open(DataFile))
+            {
+                store.Save(new TestDocument { Key = "a", Foo = "bar" });
+                store.Save(new TestDocument { Key = "b", Foo = "bar 2" });
+
+                var all = store.GetAll<TestDocument>();
+
+                Assert.That(all.Count(), Is.EqualTo(2));
             }
         }
     }
 
-    public class Test : Document
+    public class TestDocument : Document
     {
         public string Foo { get; set; }
     }

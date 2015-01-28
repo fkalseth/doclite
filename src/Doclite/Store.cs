@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using SQLitePCL;
@@ -113,7 +114,7 @@ namespace Doclite
             {
                 Execute(() =>
                 {
-                    using (var statement = _connection.Prepare(String.Format("select data, timestamp from {0} where key = @key", table)))
+                    using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0} where key = @key", table)))
                     {
                         statement.Bind(1, key);
 
@@ -125,12 +126,7 @@ namespace Doclite
                             return;
                         }
 
-                        var data = (string) statement["data"];
-                        var timestamp = (long) statement["timestamp"];
-                        
-                        document = JsonConvert.DeserializeObject<T>(data);
-                        document.Timestamp = Parse(timestamp);
-                        document.Key = key;
+                        document = ReadRow<T>(statement);
                     }
 
                 }, transaction: false);
@@ -147,6 +143,19 @@ namespace Doclite
 
                 throw;
             }
+        }
+
+        private T ReadRow<T>(ISQLiteStatement statement) where T : Document
+        {
+            var data = (string) statement["data"];
+            var timestamp = (long) statement["timestamp"];
+            var key = (string) statement["key"];
+
+            var document = JsonConvert.DeserializeObject<T>(data);
+            document.Timestamp = Parse(timestamp);
+            document.Key = key;
+            
+            return document;
         }
 
         private DateTimeOffset Parse(long timestamp)
@@ -194,6 +203,29 @@ namespace Doclite
                     if (result != SQLiteResult.DONE) Log.Info("* Delete resulted in " + result);
                 }
             });
+        }
+
+        public IEnumerable<T> GetAll<T>() where T : Document
+        {
+            Log.Info(String.Format("Getting all from {0}", TableFor(typeof(T))));
+
+            var table = TableFor(typeof(T));
+            
+            using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0}", table)))
+            {
+                do
+                {
+                    var result = statement.Step();
+
+                    if (result != SQLiteResult.ROW)
+                    {
+                        break;
+                    }
+
+                    yield return ReadRow<T>(statement);
+
+                } while(true);
+            }
         }
     }
 }
