@@ -72,7 +72,7 @@ namespace Doclite.Tests
                 store.Save(new TestDocument { Key = "a", Foo = "bar" });
                 Assert.IsNotNull(store.Get<TestDocument>("a"), "Should have been added to store");
                 
-                store.Delete("test", "a");
+                store.Delete<TestDocument>("a");
 
                 Assert.IsNull(store.Get<TestDocument>("a"), "Should have been deleted from store");
             }

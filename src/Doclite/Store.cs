@@ -189,8 +189,9 @@ namespace Doclite
             _connection.Dispose();
         }
 
-        public void Delete(string table, string key)
+        public void Delete<T>(string key)
         {
+            var table = TableFor(typeof (T));
             Log.Info(String.Format("Deleting {0} from {1}", key, table));
 
             Execute(() =>
