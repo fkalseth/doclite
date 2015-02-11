@@ -87,16 +87,7 @@ namespace Doclite.Tests
                 Assert.IsNull(store.Get<TestDocument>("no-such-key"));
             }
         }
-
-        [Test]
-        public void Retrieves_null_if_table_does_not_exist()
-        {
-            using (var store = Store.Open(DataFile))
-            {
-                Assert.IsNull(store.Get<TestDocument>("no-such-key"));
-            }
-        }
-
+        
         [Test]
         public void Can_retrieve_all_documents_of_type()
         {

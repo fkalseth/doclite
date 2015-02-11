@@ -26,7 +26,7 @@ namespace Doclite
 
         public void Save(Document document)
         {
-            var table = TableFor(document.GetType());
+            var table = TableNameFor(document.GetType());
             Log.Info("Saving {0} into {1}", document.Key, table);
 
             EnsureTableExists(table);
@@ -51,7 +51,86 @@ namespace Doclite
             });
         }
 
-        private string TableFor(Type documentType)
+        public TDocument Get<TDocument>(string key)
+            where TDocument : Document
+        {
+            Log.Info(String.Format("Getting {0} from {1}", key, TableNameFor(typeof(TDocument))));
+
+            TDocument document = default(TDocument);
+            var table = TableNameFor(typeof(TDocument));
+
+            Execute(() =>
+            {
+                using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0} where key = @key", table)))
+                {
+                    statement.Bind(1, key);
+
+                    var result = statement.Step();
+
+                    if (result != SQLiteResult.ROW)
+                    {
+                        Log.Info("No results found in table {0} for key {1} (sqlite result: {2})", table, key, result);
+                        return;
+                    }
+
+                    document = ReadRow<TDocument>(statement);
+                }
+
+            }, transaction: false);
+
+            return document;
+        }
+
+        private TDocument ReadRow<TDocument>(ISQLiteStatement statement) where TDocument : Document
+        {
+            var data = (string) statement["data"];
+            var timestamp = (long) statement["timestamp"];
+            var key = (string) statement["key"];
+
+            var document = JsonConvert.DeserializeObject<TDocument>(data);
+            document.Timestamp = ParseTimestamp(timestamp);
+            document.Key = key;
+            
+            return document;
+        }
+        
+        public void Delete<TDocument>(string key)
+        {
+            var table = TableNameFor(typeof (TDocument));
+            Log.Info(String.Format("Deleting {0} from {1}", key, table));
+
+            Execute(() =>
+            {
+                using (var statement = _connection.Prepare(String.Format("delete from {0} where key = @key", table)))
+                {
+                    statement.Bind(1, key);
+
+                    var result = statement.Step();
+                    if (result != SQLiteResult.DONE) Log.Info("* Delete resulted in " + result);
+                }
+            });
+        }
+
+        public IEnumerable<TDocument> GetAll<TDocument>() where TDocument : Document
+        {
+            Log.Info(String.Format("Getting all from {0}", TableNameFor(typeof(TDocument))));
+
+            var table = TableNameFor(typeof(TDocument));
+            
+            using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0}", table)))
+            {
+                SQLiteResult result = statement.Step();
+
+                while (result == SQLiteResult.ROW)
+                {
+                    yield return ReadRow<TDocument>(statement);
+
+                    result = statement.Step();
+                }
+            }
+        }
+        
+        private string TableNameFor(Type documentType)
         {
             return documentType.Name;
         }
@@ -102,63 +181,7 @@ namespace Doclite
             }
         }
 
-        public T Get<T>(string key)
-            where T : Document
-        {
-            Log.Info(String.Format("Getting {0} from {1}", key, TableFor(typeof(T))));
-
-            T document = default(T);
-            var table = TableFor(typeof(T));
-
-            try
-            {
-                Execute(() =>
-                {
-                    using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0} where key = @key", table)))
-                    {
-                        statement.Bind(1, key);
-
-                        var result = statement.Step();
-
-                        if (result != SQLiteResult.ROW)
-                        {
-                            Log.Info("No results found in table {0} for key {1} (sqlite result: {2})", table, key, result);
-                            return;
-                        }
-
-                        document = ReadRow<T>(statement);
-                    }
-
-                }, transaction: false);
-
-                return document;
-            }
-            catch (SQLiteException ex)
-            {
-                if (ex.Message.Contains("no such table"))
-                {
-                    Log.Info("No results found for key {0} because table {1} did not exist)", key, table);
-                    return default(T);
-                }
-
-                throw;
-            }
-        }
-
-        private T ReadRow<T>(ISQLiteStatement statement) where T : Document
-        {
-            var data = (string) statement["data"];
-            var timestamp = (long) statement["timestamp"];
-            var key = (string) statement["key"];
-
-            var document = JsonConvert.DeserializeObject<T>(data);
-            document.Timestamp = Parse(timestamp);
-            document.Key = key;
-            
-            return document;
-        }
-
-        private DateTimeOffset Parse(long timestamp)
+        private DateTimeOffset ParseTimestamp(long timestamp)
         {
             var dt = new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero);
             dt = dt.AddSeconds(timestamp);
@@ -187,46 +210,6 @@ namespace Doclite
         {
             Log.Info("Closing connection.");
             _connection.Dispose();
-        }
-
-        public void Delete<T>(string key)
-        {
-            var table = TableFor(typeof (T));
-            Log.Info(String.Format("Deleting {0} from {1}", key, table));
-
-            Execute(() =>
-            {
-                using (var statement = _connection.Prepare(String.Format("delete from {0} where key = @key", table)))
-                {
-                    statement.Bind(1, key);
-
-                    var result = statement.Step();
-                    if (result != SQLiteResult.DONE) Log.Info("* Delete resulted in " + result);
-                }
-            });
-        }
-
-        public IEnumerable<T> GetAll<T>() where T : Document
-        {
-            Log.Info(String.Format("Getting all from {0}", TableFor(typeof(T))));
-
-            var table = TableFor(typeof(T));
-            
-            using (var statement = _connection.Prepare(String.Format("select key, data, timestamp from {0}", table)))
-            {
-                do
-                {
-                    var result = statement.Step();
-
-                    if (result != SQLiteResult.ROW)
-                    {
-                        break;
-                    }
-
-                    yield return ReadRow<T>(statement);
-
-                } while(true);
-            }
         }
     }
 }
