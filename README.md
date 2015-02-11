@@ -1,6 +1,6 @@
 doclite, a very simple document database based on Sqlite.PCL
 
-doclite lets you save and retrieve any plain object that implements the IDocument interface (or the abstract Document).
+doclite lets you save and retrieve any plain object that implements Document (or IDocument directly).
 
 
 ```c#
@@ -12,6 +12,8 @@ TDocument store.Get<TDocument>(key)
 void store.Delete<TDocument>(key)
 IList<TDocument> store.All<TDocument>()
 
+where TDocument : IDocument
+
 // example:
 
 using (var store = Store.Open("data.db"))
@@ -20,4 +22,12 @@ using (var store = Store.Open("data.db"))
   
   var user = store.Get<UserDocument>("user1");
 }
+
+// given:
+
+public class UserDocument : Document
+{
+  public string Name { get; set; }
+}
+
 ```
