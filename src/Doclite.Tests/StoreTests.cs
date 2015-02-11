@@ -101,6 +101,24 @@ namespace Doclite.Tests
                 Assert.That(all.Count(), Is.EqualTo(2));
             }
         }
+
+        [Test]
+        public void Can_save_document_implementing_IDocument_interface()
+        {
+            using (var store = Store.Open(DataFile))
+            {
+                store.Save(new TestDocument2 {Key = "test-key"});
+                var retrieved = store.Get<TestDocument2>("test-key");
+
+                Assert.That(retrieved, Is.Not.Null);
+            }
+        }
+    }
+
+    public class TestDocument2 : IDocument
+    {
+        public string Key { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
     }
 
     public class TestDocument : Document

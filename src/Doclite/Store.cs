@@ -24,7 +24,7 @@ namespace Doclite
             _connection = connection;
         }
 
-        public void Save(Document document)
+        public void Save(IDocument document)
         {
             var table = TableNameFor(document.GetType());
             Log.Info("Saving {0} into {1}", document.Key, table);
@@ -52,7 +52,7 @@ namespace Doclite
         }
 
         public TDocument Get<TDocument>(string key)
-            where TDocument : Document
+            where TDocument : IDocument
         {
             Log.Info(String.Format("Getting {0} from {1}", key, TableNameFor(typeof(TDocument))));
 
@@ -81,7 +81,7 @@ namespace Doclite
             return document;
         }
 
-        private TDocument ReadRow<TDocument>(ISQLiteStatement statement) where TDocument : Document
+        private TDocument ReadRow<TDocument>(ISQLiteStatement statement) where TDocument : IDocument
         {
             var data = (string) statement["data"];
             var timestamp = (long) statement["timestamp"];
@@ -111,7 +111,7 @@ namespace Doclite
             });
         }
 
-        public IEnumerable<TDocument> GetAll<TDocument>() where TDocument : Document
+        public IEnumerable<TDocument> GetAll<TDocument>() where TDocument : IDocument
         {
             Log.Info(String.Format("Getting all from {0}", TableNameFor(typeof(TDocument))));
 
